@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import HarvesterCard from "./components/Card";
 import HccNavbar from "./components/Navbar";
 import HccFooter from "./components/Footer";
+import Spinner from "./components/Spinner";
 import axios from "axios";
 import './App.css';
 
@@ -11,7 +12,10 @@ class App extends Component {
         super(props);
         this.state = {
             viewEnabled: true,
-            harvesterList: []
+            harvesterList: [],
+            showSpinner: true,
+            numEnabledHarvesters: 0,
+            numDisabledHarvesters: 0
         };
         this.refreshList = this.refreshList.bind(this);
         this.getToken = this.getToken.bind(this);
@@ -33,22 +37,27 @@ class App extends Component {
     async refreshList() {
         var newHarvesterList = [];
         const response = await axios
-            .get("/v1/harvesters/status", {headers: this.getToken()})
+            .get("/v1/harvesters", {headers: this.getToken()})
             .catch(err => console.log(err));
         
-        for (var key in response.data) {
-            var harvester = {};
-            harvester.name = key;
-            if (response.data[key] === "disabled") {
-                harvester.enabled = false;
-                harvester.status = "No status available when disabled";
-            } else {
-                harvester.enabled = true;
-                harvester.status = response.data[key].status;
-            }
+        var harvester;
+        var numEnabled = 0;
+        var numDisabled = 0;
+        for (var counter in response.data["results"]) {
+            harvester = {};
+            harvester.name = response.data["results"][counter].name;
+            harvester.enabled = response.data["results"][counter].enabled;
             newHarvesterList.push(harvester);
+            if (harvester.enabled) {
+                numEnabled += 1;
+            } else {
+                numDisabled += 1;
+            }
         }
-        this.setState({ harvesterList: newHarvesterList});
+        this.setState({ harvesterList: newHarvesterList,
+                        showSpinner: false,
+                        numEnabledHarvesters: numEnabled,
+                        numDisabledHarvesters: numDisabled});
     }
 
     viewEnabled(e) {
@@ -72,7 +81,7 @@ class App extends Component {
             >
                 <HarvesterCard
                     name={harvester.name}
-                    status={harvester.status}
+                    enabled={harvester.enabled}
                 />
             </div>
         ));
@@ -95,13 +104,19 @@ class App extends Component {
                     <div className="card">
                         <div className="card-header">
                             <h5 className="mb-0">
-                                <button className="btn btn-link" data-toggle="collapse" data-target="#collapseEnabled" onClick={this.viewEnabled}>
-                                    Enabled
+                                <button className="btn btn-outline-info" data-toggle="collapse" data-target="#collapseEnabled" onClick={this.viewEnabled}>
+                                    Enabled Harvesters &nbsp;
+                                    <span className="badge badge-light">{this.state.numEnabledHarvesters}</span>
                                 </button>
                             </h5>
                         </div>
                         <div id="collapseEnabled" className={this.state.viewEnabled ? "collapse show" :"collapse"} data-parent="#harvesterAccordion">
                             <div className="card-body row">
+                                {this.state.showSpinner ? 
+                                <div className="col-md-6 col-md-offset-3">
+                                    <Spinner/>
+                                </div> 
+                                : null}
                                 {this.renderEnabledHarvesters()}
                             </div>
                         </div>
@@ -109,8 +124,9 @@ class App extends Component {
                     <div className="card">
                         <div className="card-header">
                             <h5 className="mb-0">
-                                <button className="btn btn-link" data-toggle="collapse" data-target="#collapseDisabled" onClick={this.viewDisabled}>
-                                    Disabled
+                                <button className="btn btn-outline-info" data-toggle="collapse" data-target="#collapseDisabled" onClick={this.viewDisabled}>
+                                    Disabled Harvesters &nbsp;
+                                    <span className="badge badge-light">{this.state.numDisabledHarvesters}</span>
                                 </button>
                             </h5>
                         </div>

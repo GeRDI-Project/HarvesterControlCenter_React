@@ -11,7 +11,7 @@ export default class HccNavbar extends Component {
     render () {
         return (
             <div>
-                <Navbar className="custom-navbar" color="light" light expand="sm">
+                <Navbar className="custom-navbar fixed-top" color="light" expand="sm">
                     <NavbarBrand href="/">Harvester Control Center</NavbarBrand>
                 </Navbar>
             </div>
