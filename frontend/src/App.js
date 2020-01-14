@@ -31,7 +31,7 @@ class App extends Component {
     }
 
     getToken() {
-        return {"Authorization": "Token 5dfb8d8bfa1d538f22011fd7db1dfd4ae361d5f1"};
+        return {"Authorization": "Token ff9f764ebd742535dc7995a891129456f9e8a195"};
     }
 
     async refreshList() {
@@ -44,9 +44,7 @@ class App extends Component {
         var numEnabled = 0;
         var numDisabled = 0;
         for (var counter in response.data["results"]) {
-            harvester = {};
-            harvester.name = response.data["results"][counter].name;
-            harvester.enabled = response.data["results"][counter].enabled;
+            harvester = response.data["results"][counter];
             newHarvesterList.push(harvester);
             if (harvester.enabled) {
                 numEnabled += 1;
@@ -80,8 +78,7 @@ class App extends Component {
                 className="col-lg-4 col-md-6 col-sm-12"
             >
                 <HarvesterCard
-                    name={harvester.name}
-                    enabled={harvester.enabled}
+                    harvester={harvester}
                 />
             </div>
         ));
@@ -103,12 +100,10 @@ class App extends Component {
                 <div className="accordion" id="harvesterAccordion">
                     <div className="card">
                         <div className="card-header">
-                            <h5 className="mb-0">
-                                <button className="btn btn-outline-info" data-toggle="collapse" data-target="#collapseEnabled" onClick={this.viewEnabled}>
-                                    Enabled Harvesters &nbsp;
-                                    <span className="badge badge-light">{this.state.numEnabledHarvesters}</span>
-                                </button>
-                            </h5>
+                            <button className="btn btn-outline-info" data-toggle="collapse" data-target="#collapseEnabled" onClick={this.viewEnabled}>
+                                Enabled Harvesters &nbsp;
+                                <span className="badge badge-light">{this.state.numEnabledHarvesters}</span>
+                            </button>
                         </div>
                         <div id="collapseEnabled" className={this.state.viewEnabled ? "collapse show" :"collapse"} data-parent="#harvesterAccordion">
                             <div className="card-body row">
@@ -123,12 +118,10 @@ class App extends Component {
                     </div>
                     <div className="card">
                         <div className="card-header">
-                            <h5 className="mb-0">
-                                <button className="btn btn-outline-info" data-toggle="collapse" data-target="#collapseDisabled" onClick={this.viewDisabled}>
-                                    Disabled Harvesters &nbsp;
-                                    <span className="badge badge-light">{this.state.numDisabledHarvesters}</span>
-                                </button>
-                            </h5>
+                            <button className="btn btn-outline-info" data-toggle="collapse" data-target="#collapseDisabled" onClick={this.viewDisabled}>
+                                Disabled Harvesters &nbsp;
+                                <span className="badge badge-light">{this.state.numDisabledHarvesters}</span>
+                            </button>
                         </div>
                         <div id="collapseDisabled" className={this.state.viewEnabled ? "collapse" :"collapse show"} data-parent="#harvesterAccordion">
                             <div className="card-body row">
