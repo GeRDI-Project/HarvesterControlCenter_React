@@ -4,8 +4,9 @@ import {
   Card, CardHeader, CardBody
 } from 'reactstrap';
 import SmallSpinner from "./SmallSpinner";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlayCircle, faStopCircle, faSync } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlayCircle, faStopCircle, faSync } from '@fortawesome/free-solid-svg-icons';
+import { Progress } from 'reactstrap';
 
 export default class HarvesterCard extends Component {
     constructor(props) {
@@ -13,7 +14,9 @@ export default class HarvesterCard extends Component {
         this.state = {
             harvester: this.props.harvester,
             status: "",
-            harvesting: false
+            harvesting: false,
+            harvestingProgress: {},
+            interval: null
         };
         this.refreshStatus = this.refreshStatus.bind(this);
         this.getToken = this.getToken.bind(this);
@@ -24,6 +27,7 @@ export default class HarvesterCard extends Component {
         this.cardBodyContent = this.cardBodyContent.bind(this);
         this.cardHeaderContent = this.cardHeaderContent.bind(this);
         this.refresh = this.refresh.bind(this);
+        this.renderProgressBar = this.renderProgressBar.bind(this);
     }
 
     componentDidMount() {
@@ -70,13 +74,26 @@ export default class HarvesterCard extends Component {
 
         var newStatus;
         var isHarvesting;
+        var hProgress = {};
         if (response) {
             newStatus = response.data[this.state.harvester.name].status;
+            hProgress.cachedDocs = response.data[this.state.harvester.name].cached_docs;
+            hProgress.progress = response.data[this.state.harvester.name].progress;
+            hProgress.progressCur = response.data[this.state.harvester.name].progress_cur;
+            hProgress.progressMax = response.data[this.state.harvester.name].progress_max;
+            hProgress.maxDocs = response.data[this.state.harvester.name].max_docs;
+            hProgress.lastHarvestDate = response.data[this.state.harvester.name].lastHarvestDate;
         } else {
             newStatus = "no status";
+            hProgress.cachedDocs = 0;
+            hProgress.progress = 0;
+            hProgress.progressCur = 0;
+            hProgress.progressMax = 0;
+            hProgress.maxDocs = 0;
+            hProgress.lastHarvestDate = "";
         }
         isHarvesting = (newStatus === "harvesting" || newStatus === "queued");
-        this.setState({ status: newStatus, harvesting: isHarvesting});
+        this.setState({ status: newStatus, harvesting: isHarvesting, harvestingProgress: hProgress});
     }
 
     cardBodyContent(isEnabled) {
@@ -132,7 +149,8 @@ export default class HarvesterCard extends Component {
 
         if (response) {
             this.setState({ harvesting: true});
-            this.refresh();
+            var ival = setInterval(this.refreshStatus, 2000);
+            this.setState({interval: ival});
         }
     }
 
@@ -144,7 +162,10 @@ export default class HarvesterCard extends Component {
 
         if (response) {
             this.setState({ harvesting: false});
-            this.refresh();
+            if (this.state.interval !== null) {
+                clearInterval(this.state.interval);
+                this.setState({intervall: null});
+            }
         }
     }
 
@@ -156,10 +177,29 @@ export default class HarvesterCard extends Component {
         }
     }
 
+    renderProgressBar() {
+        if (this.state.interval === null) {
+            var ival = setInterval(this.refreshStatus, 2000);
+            this.setState({interval: ival});
+        }
+        if (this.state.harvestingProgress.progress  && this.state.harvestingProgress.maxDocs) {
+            var currentProgress = this.state.harvestingProgress.progress * 100 / this.state.harvestingProgress.maxDocs;
+        }
+        return (
+            <>
+                <div className="text-center">{currentProgress}%</div>
+                <Progress value={currentProgress}/>
+            </>
+        );
+    }
+
     render () {
         return (
             <div>
                 <Card className="mb-3">
+                    {this.state.harvesting ?
+                    this.renderProgressBar()
+                    : null}
                     <CardHeader>
                         {this.cardHeaderContent(this.state.harvester.enabled)}
                     </CardHeader>
