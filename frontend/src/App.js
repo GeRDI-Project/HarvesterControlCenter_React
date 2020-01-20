@@ -3,8 +3,11 @@ import HarvesterCard from "./components/Card";
 import HccNavbar from "./components/Navbar";
 import HccFooter from "./components/Footer";
 import Spinner from "./components/Spinner";
+import CreateModal from "./components/CreateModal";
 import axios from "axios";
 import './App.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
 class App extends Component {
 
@@ -15,15 +18,19 @@ class App extends Component {
             harvesterList: [],
             showSpinner: true,
             numEnabledHarvesters: 0,
-            numDisabledHarvesters: 0
+            numDisabledHarvesters: 0,
+            modalIsOpen: false
         };
         this.refreshList = this.refreshList.bind(this);
         this.getToken = this.getToken.bind(this);
         this.viewEnabled = this.viewEnabled.bind(this);
+        this.getCSRF = this.getCSRF.bind(this);
         this.viewDisabled = this.viewDisabled.bind(this);
         this.renderHarvesters = this.renderHarvesters.bind(this);
         this.renderEnabledHarvesters = this.renderEnabledHarvesters.bind(this);
         this.renderDisabledHarvesters = this.renderDisabledHarvesters.bind(this);
+        this.toggleHarvesterCreateModal = this.toggleHarvesterCreateModal.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
     }
 
     componentDidMount() {
@@ -32,6 +39,27 @@ class App extends Component {
 
     getToken() {
         return {"Authorization": "Token ff9f764ebd742535dc7995a891129456f9e8a195"};
+    }
+
+    getCSRF() {
+        var name, decodedCookie, cookieArray, cookieEntry;
+    
+        name = "csrftoken=";
+        decodedCookie = decodeURIComponent(document.cookie);
+        cookieArray = decodedCookie.split(';');
+        for (var i = 0; i < cookieArray.length; i++) {
+            cookieEntry = cookieArray[i];
+    
+            // avoid spaces at the beginning
+            while (cookieEntry.charAt(0) === ' ') {
+                cookieEntry = cookieEntry.substring(1);
+            }
+            if (cookieEntry.indexOf(name) === 0) {
+                cookieEntry = cookieEntry.substring(name.length, cookieEntry.length);
+                return cookieEntry;
+            }
+        }
+        return {};
     }
 
     async refreshList() {
@@ -43,13 +71,17 @@ class App extends Component {
         var harvester;
         var numEnabled = 0;
         var numDisabled = 0;
-        for (var counter in response.data["results"]) {
-            harvester = response.data["results"][counter];
-            newHarvesterList.push(harvester);
-            if (harvester.enabled) {
-                numEnabled += 1;
-            } else {
-                numDisabled += 1;
+        if (typeof response !== "undefined") {
+            if ("results" in response.data) {
+                for (var counter in response.data["results"]) {
+                    harvester = response.data["results"][counter];
+                    newHarvesterList.push(harvester);
+                    if (harvester.enabled) {
+                        numEnabled += 1;
+                    } else {
+                        numDisabled += 1;
+                    }
+                }
             }
         }
         this.setState({ harvesterList: newHarvesterList,
@@ -92,6 +124,20 @@ class App extends Component {
         return this.renderHarvesters(false);
     }
 
+    toggleHarvesterCreateModal() {
+        this.setState({modalIsOpen: !this.state.modalIsOpen})
+    }
+
+    handleSubmit(data) {
+        this.toggleHarvesterCreateModal();
+        var url = "/v1/harvesters/";
+        data["csrfmiddlewaretoken"] = this.getCSRF();
+        axios
+            .post(url, data, {headers: this.getToken()})
+            .catch(err => console.log(err));
+        this.refreshList();
+    }
+
     render() {
         return (
         <main className="content">
@@ -103,6 +149,9 @@ class App extends Component {
                             <button className="btn btn-outline-info" data-toggle="collapse" data-target="#collapseEnabled" onClick={this.viewEnabled}>
                                 Enabled Harvesters &nbsp;
                                 <span className="badge badge-light">{this.state.numEnabledHarvesters}</span>
+                            </button>
+                            <button className="btn btn-primary float-right" onClick={this.toggleHarvesterCreateModal}>
+                                <FontAwesomeIcon icon={faPlus} size="2x"/>
                             </button>
                         </div>
                         <div id="collapseEnabled" className={this.state.viewEnabled ? "collapse show" :"collapse"} data-parent="#harvesterAccordion">
@@ -132,6 +181,12 @@ class App extends Component {
                 </div>
             </div>
             <HccFooter/>
+            {this.state.modalIsOpen ? (
+              <CreateModal
+                toggle={this.toggleHarvesterCreateModal}
+                onSave={this.handleSubmit}
+              />
+            ) : null}
         </main>
         );
     }

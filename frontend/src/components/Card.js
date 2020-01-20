@@ -99,18 +99,20 @@ export default class HarvesterCard extends Component {
     cardBodyContent(isEnabled) {
         if (isEnabled) {
             return ( 
-                <li className="list-group-item">
-                    {(this.state.status === "") 
-                    ?
-                    <SmallSpinner/>
-                    :
-                    (<>
-                        Status:  {" " + this.state.status} &nbsp;
-                        <button className="btn btn-success btn-sm float-right" onClick={() => this.refresh()}>
-                            <FontAwesomeIcon icon={faSync} />
-                        </button>
-                    </>)}
-                </li>
+                <>
+                    <li className="list-group-item">
+                        {(this.state.status === "") 
+                        ?
+                        <SmallSpinner/>
+                        :
+                        (<>
+                            Status:  {" " + this.state.status} &nbsp;
+                            <button className="btn btn-success btn-sm float-right" onClick={() => this.refresh()}>
+                                <FontAwesomeIcon icon={faSync} />
+                            </button>
+                        </>)}
+                    </li>
+                </>
             );
         } else {
             return null;
@@ -122,14 +124,16 @@ export default class HarvesterCard extends Component {
             return (
                 <>
                     {this.state.harvester.name}
-                    <button className="btn btn-primary btn-sm float-right" onClick={() => this.toggle()}>
-                        {this.state.harvesting 
-                        ? 
-                        <FontAwesomeIcon icon={faStopCircle} />
-                        :
-                        <FontAwesomeIcon icon={faPlayCircle} />
-                        }
-                    </button>
+                    {this.state.status !== "no status" && this.state.status !== "" ?
+                            <button className="btn btn-primary btn-sm float-right" onClick={() => this.toggle()}>
+                                {this.state.harvesting 
+                                ? 
+                                <FontAwesomeIcon icon={faStopCircle} />
+                                :
+                                <FontAwesomeIcon icon={faPlayCircle} />
+                                }
+                            </button>
+                    : null}
                 </>
             )
         } else {
